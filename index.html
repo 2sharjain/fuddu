@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <!-- {% assets "js" %} -->
+    <!-- <script type="text/javascript" src="{{ ASSET_URL }}" defer></script> -->
+    <!-- {% endassets %} -->
+    <!-- {% assets "css" %} -->
+    <!-- <link rel="stylesheet" href="{{ ASSET_URL }}" /> -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid and Sidebar Layout</title>
+    <style>
+        body {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            height: 100vh;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-gap: 2px;
+            flex: 1;
+        }
+        .grid-item {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+            width:520px;
+            height: 480px;
+            position: relative;
+        }
+        
+        .sidebar {
+            width: 15%;
+            background-color: #ccc;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .dropdown, .checkbox-group {
+            margin-bottom: 10px;
+        }
+        .checkbox-group div {
+            height: 10px;
+            background: black;
+            margin-top: 5px;
+        }
+        .scalar_dropdown{
+          position: absolute;
+          top: 0;  /* Push to top */
+          left: 0;
+          width: 100%
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-container" id="main-grid">
+        <div class="grid-item" id="hexagon0"></div>
+        <div class="grid-item" id="hexagon1"></div>
+        <div class="grid-item" id="hexagon2"></div>
+        <div class="grid-item" id="hexagon3"></div>
+
+    </div>
+    <div id="preview"></div>
+
+    <div class="sidebar">
+        <div class="dropdown">
+          <select id="fileSelector">
+            <option value="./Original.tsv">Original.tsv</option>
+            <option value="./augmented.tsv">Interpolated data</option>
+          </select>
+        <button id="loadButton">Load Data</button>
+        <pre id="output"></pre>
+        </div>
+
+        <div class="dropdown"><select><option>dhruv</option></select></div>
+        <div class="dropdown"><select><option>chutiya</option></select></div>
+        <div class="dropdown"><select><option>obviously</option></select></div>
+        <div class="checkbox-group">
+            <input type="checkbox"> <div></div>
+            <input type="checkbox"> <div></div>
+            <input type="checkbox"> <div></div>
+        </div>
+    </div>
+    <script src="./bestagons.js">
+    </script>
+
+</body>
+</html>

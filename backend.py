@@ -1,0 +1,113 @@
+from enum import verify
+from flask import Flask, request, jsonify
+from httpcore import Origin
+from matplotlib.hatch import VerticalHatch
+import numpy as np
+import pandas as pd
+from flask_cors import CORS
+import pickle
+
+
+app = Flask(__name__)
+CORS(app)
+
+SCALARS = ['KS1295[%]', '6082[%]', '2024[%]', 'bat-box[%]', '3003[%]', '4032[%]', 'Al', 'Si', 'Cu', 'Ni', 'Mg', 'Mn', 'Fe', 'Cr', 'Ti', 'Zr', 'V', 'Zn', 'Vf_FCC_A1', 'Vf_DIAMOND_A4', 'Vf_AL15SI2M4', 'Vf_AL3X', 'Vf_AL6MN', 'Vf_MG2ZN3', 'Vf_AL3NI2', 'Vf_AL3NI_D011', 'Vf_AL7CU4NI', 'Vf_AL2CU_C16', 'Vf_Q_ALCUMGSI', 'Vf_AL7CU2FE', 'Vf_MG2SI_C1', 'Vf_AL9FE2SI2', 'Vf_AL18FE2MG7SI10', 'eut. frac.[%]', 'eut. T ( C)', 'T_FCC_A1', 'T_DIAMOND_A4', 'T_AL15SI2M4', 'T_AL3X', 'T_AL6MN', 'T_MG2ZN3', 'T_AL3NI2', 'T_AL3NI_D011', 'T_AL7CU4NI', 'T_AL2CU_C16', 'T_Q_ALCUMGSI', 'T_AL7CU2FE', 'T_MG2SI_C1', 'T_AL9FE2SI2', 'T_AL18FE2MG7SI10', 'T(liqu)', 'T(sol)', 'delta_T', 'delta_T_FCC', 'delta_T_Al15Si2M4', 'delta_T_Si', 'CSC', 'YS(MPa)', 'hardness(Vickers)', 'CTEvol(1/K)(20.0-300.0 C)', 'Density(g/cm3)', 'Volume(m3/mol)', 'El.conductivity(S/m)', 'El. resistivity(ohm m)', 'heat capacity(J/(mol K))', 'Therm.conductivity(W/(mK))', 'Therm. diffusivity(m2/s)', 'Therm.resistivity(mK/W)', 'Linear thermal expansion (1/K)(20.0-300.0 C)', 'Technical thermal expansion (1/K)(20.0-300.0 C)']
+
+
+
+@app.route('/load_tsv', methods=['POST'])
+def load_tsv():
+    data = request.get_json()
+    # print(data)
+    filename = data.get("filename")
+    scalars = data.get("scalars")
+    numHexagons = data.get("numHexagons")
+
+    # try:
+    #     df = pd.read_csv(filename, sep='\t')  # Read TSV into DataFrame
+    #     result = df.to_dict(orient="records")  # Convert DataFrame to list of dictionaries
+    #     print(df.head())
+    #     return jsonify(result)  # Return JSON response
+    # except Exception as e:
+    #     return jsonify({"error": str(e)}), 500
+    vertices, points, scalar_fields = getpointsforrendering(filename, scalars)
+    return jsonify({'vertices': vertices, 'points': points, 'scalar_fields': scalar_fields})
+    # return jsonify(vertices=vertices)
+
+
+def _getpointsforrendering(filename, scalars):
+    print(filename)
+    vertices = []
+    points = []
+    scalar_feilds = []
+    df = pd.read_csv(filename, sep='\t')
+    inputs = df.iloc[:, :6]
+    input_np = np.array(inputs)
+    input_np = input_np/100
+
+    radius = 5
+    for i in range(6):
+        theta = (i*np.pi)/3
+        vertices.append([radius*np.cos(theta),radius*np.sin(theta),SCALARS[i]])
+
+    # with open("vertices.pkl", "wb") as file:
+    #     pickle.dump(vertices, file)
+    # vertices = np.array(vertices)
+    for i in range(249999):
+        x_coord = 0
+        y_coord = 0
+        for j in range(6):
+            x_coord = x_coord + input_np[i][j]*vertices[j][0]
+            y_coord = y_coord + input_np[i][j]*vertices[j][1]
+        
+        points.append([x_coord,y_coord, i])
+    # points = np.array(points)
+    with open("points.pkl", "wb") as file:
+        pickle.dump(points, file)
+    for scalar in scalars:
+        col = df[scalar].tolist()
+
+        scalar_feilds.append(col)
+
+    return vertices, points, scalar_feilds
+
+
+def getpointsforrendering(filename, scalars):
+    print(filename)
+    scalar_feilds = []
+    df = pd.read_csv(filename, sep='\t')
+
+
+    with open("vertices.pkl", "rb") as file:
+        vertices = pickle.load(file)
+
+    with open("points.pkl", 'rb') as file:
+        points =  pickle.load(file)
+
+    for scalar in scalars:
+        col = df[scalar].tolist()
+
+        scalar_feilds.append(col)
+
+    return vertices, points, scalar_feilds
+
+
+@app.route('/change_hexagon', methods=['POST'])
+def change_hexagon():
+    data = request.get_json()
+    print(data)
+    filename = data.get("filename")
+    scalar = data.get("scalar_field")
+    print("\n\n\n\n\n\n\n\n\n\n\n")
+    print(scalar)
+    print("\n\n\n\n\n\n\n\n\n\n\n")
+    df = pd.read_csv(filename, sep='\t')
+
+    scalar_field = df[scalar].tolist()
+
+    
+    return jsonify({'scalar_field': scalar_field})
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
