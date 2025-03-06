@@ -83,13 +83,28 @@
         <pre id="output"></pre>
         </div>
 
-        <div class="dropdown"><select><option>dhruv</option></select></div>
-        <div class="dropdown"><select><option>chutiya</option></select></div>
-        <div class="dropdown"><select><option>obviously</option></select></div>
-        <div class="checkbox-group">
-            <input type="checkbox"> <div></div>
-            <input type="checkbox"> <div></div>
-            <input type="checkbox"> <div></div>
+        <!-- <div class="dropdown"><select><option>dhruv</option></select></div> -->
+        <!-- <div class="dropdown"><select><option>chutiya</option></select></div> -->
+        <!-- <div class="dropdown"><select><option>obviously</option></select></div> -->
+        <div class="gradient">
+             <input type="checkbox" id = "grad_check">
+             <button id="grad_forward">Grad Forward</button>
+             <button id="grad_forward">Grad Backward</button>
+            <!-- <input type="checkbox"> <div></div> -->
+            <!-- <input type="checkbox"> <div></div> -->
+        </div>
+
+        <div class="contour">
+            <input type="checkbox" id = "contour_check">
+            <input type="range" step="1" id = "contour_control">
+            <select id="contour_field">
+              </select>
+       </div>
+
+        <div class="show_data" >
+            <svg width="200" height="250" id = "show_data" word-wrap="break-word">
+
+            </svg>
         </div>
     </div>
     <script src="./bestagons.js">
