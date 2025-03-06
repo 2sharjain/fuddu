@@ -13,7 +13,7 @@
     <!-- <link rel="stylesheet" href="{{ ASSET_URL }}" /> -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grid and Sidebar Layout</title>
+    <title>Bestagons</title>
     <style>
         body {
             display: flex;
@@ -77,9 +77,12 @@
         <div class="dropdown">
           <select id="fileSelector">
             <option value="./Original.tsv">Original data</option>
-            <option value="./aug_150k.tsv">Interpolated data</option>
+            <option value="./aug_100k.tsv">Interpolated data</option>
+            <option value="./original_120k.tsv">original subsampled data</option>
           </select>
-        <button id="loadButton">Load Data</button>
+          <button id="loadButton">Load Data</button>
+          <button id="ClearSvg">Clear</button>
+        
         <pre id="output"></pre>
         </div>
 

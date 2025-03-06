@@ -184,7 +184,6 @@ function renderhexagons(div_num, scalar_field){
         .attr("width", width)
         .attr("height", height)
         .attr("id", "hexsvg"+String(div_num));
-    console.log(svg.height, svg.width)
     const lineGenerator = d3.line()
         .x(d => xScale(d[0]))
         .y(d => yScale(d[1]))
@@ -229,22 +228,28 @@ function renderhexagons(div_num, scalar_field){
 function handleDropdownChange(dropId, scalar_field){
     const div_num = parseInt(dropId.charAt(dropId.length - 1));
     colormap = cmaps[div_num]
+    console.log(colormap)
     const min = d3.min(scalar_field)
     const max = d3.max(scalar_field)
     const range = max-min
 
 
-    const cmap = d3.scaleLinear()
+    const new_cmap = d3.scaleLinear()
         .domain([min, min+(range/4), min+(2*range/4), min+(3*range/4), max])  // Data range
         .range(colormap);  
-
+    // const new_cmap = d3.scaleLinear()
+    //     .domain([min, max])  // Data range
+    //     .range(["yellow", "green"]);
 
     d3.select("#hexsvg" + String(div_num))
         .selectAll("circle")
         .each(function(d) {  
-            d3.select(this).attr("fill", new_cmap(scalar_field[this.id]));  
+            d3.select(this)
+                .attr("fill", d=> new_cmap(scalar_field[d[2]]));  
         });
 }
+
+
 
 ["scalar_dropdown0", "scalar_dropdown1", "scalar_dropdown2", "scalar_dropdown3"].forEach(id => {
     document.getElementById(id).addEventListener("change", function(event) {
@@ -275,6 +280,10 @@ function handleDropdownChange(dropId, scalar_field){
 
 
 
+document.getElementById('ClearSvg').addEventListener('click', () => {
+    d3.selectAll("svg")
+        .remove();
+})
 
 
 
