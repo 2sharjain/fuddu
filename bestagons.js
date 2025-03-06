@@ -45,6 +45,9 @@ const cmaps = [
 ];
 
 const num_hex=4
+function getRandomColor() {
+    return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+}
 
 for (i=0; i<num_hex; i++){
     let gridid = "#hexagon"+i.toString()
@@ -63,9 +66,47 @@ for (i=0; i<num_hex; i++){
         .attr("value", d => d);
 
         dropdown.property("value", default_scalars[i]);
-
 }
 
+//This is for adding the scalar fields in the contour dropdown
+d3.select("#contour_field")
+.selectAll("option")
+.data(scalars)
+.enter()
+.append("option")
+.text(d => d)
+.attr("value", d => d);
+
+//This list determines the selected contour scalar field
+document.getElementById("contour_field").addEventListener("change", function(event) {
+    contour_field = event.target.value
+    console.log(contour_field)
+    let field_index = scalars.indexOf(contour_field)
+    try{
+        fetch("http://127.0.0.1:5000/field_range", {
+            method: 'POST',
+            headers:{
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                scalar_field: field_index,
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            max_val = result.max
+            min_val = result.min
+            console.log(max_val)
+            console.log(min_val)
+            document.getElementById("contour_control").max = max_val
+            document.getElementById("contour_control").min = min_val 
+
+        })
+    } catch (error){
+        console.error("dataoopsie:", error);
+    }
+    console.log(contour_field)
+});
 
 
 
@@ -73,6 +114,11 @@ let vertices = []
 let points = []
 let scalar_fields = [] 
 let selectedFile = ""
+let gradient_mode = 0
+let contour_mode = 0
+let selected_point = ""
+let contour_field = ""
+
 // THE LOAD DATA BUTTON
 //loading happens here
 document.getElementById('loadButton').addEventListener('click', () => {
@@ -102,15 +148,11 @@ document.getElementById('loadButton').addEventListener('click', () => {
             console.log(vertices)
             console.log(points)
             console.log(scalar_fields)
-            // const hexagon1Div = document.getElementById("hexagon1");
-            // const width = hexagon1Div.offsetWidth
-            // const height = hexagon1Div.offsetHeight
-            // console.log(width, height)
 
             renderhexagons(0, scalar_fields[0]);
-            renderhexagons(1, scalar_fields[1]);
-            renderhexagons(2, scalar_fields[2]);
-            renderhexagons(3, scalar_fields[3]);
+            //renderhexagons(1, scalar_fields[1]);
+            //renderhexagons(2, scalar_fields[2]);
+            //renderhexagons(3, scalar_fields[3]);
         })
 
 
@@ -135,7 +177,22 @@ function getScalarsFromDropdown() {
     }
     return scalars
 }
- 
+
+function show_data(id)
+{
+    let scalars = getScalarsFromDropdown();
+    id = id.replace('point_', '')
+    id = parseInt(id)
+    for(let i = 0; i < 4; i++)
+    {
+        d3.select("#show_data")
+        .append("text")
+        .attr("x",0)
+        .attr("y",(i+1)*50)
+        .text(scalars[i] + ":" + String(scalar_fields[i][id]))
+    }
+}
+
 function linkedhexagons(){
     let temp = d3.selectAll("circle")
     d3.selectAll("circle")
@@ -145,9 +202,30 @@ function linkedhexagons(){
                    // highlightpoints("."+this.className.baseVal)
                    d3.selectAll("."+this.className.baseVal)
                         .attr("stroke","black")
-                        .attr("stroke_width",4)
+                        .attr("stroke-width",4)
                         .attr("r",3)
+                    show_data(this.className.baseVal)
                 })
+                .on("mouseout", function(event){
+                    // highlightpoints("."+this.className.baseVal)
+                    if(selected_point != this.className.baseVal)
+                    {
+                        d3.selectAll("."+this.className.baseVal)
+                            .attr("stroke-width",0)
+                            .attr("r",1)
+                        d3.select("#show_data").selectAll("*").remove();
+                    }
+                 })
+                 .on("click", function(event){
+                    // highlightpoints("."+this.className.baseVal)
+                    d3.selectAll("."+this.className.baseVal)
+                         .attr("stroke","black")
+                         .attr("stroke-width",4)
+                         .attr("r",3)
+                     show_data(this.className.baseVal)
+                     selected_point = this.className.baseVal
+                 })
+                    
         })
 }
 
@@ -222,9 +300,6 @@ function renderhexagons(div_num, scalar_field){
 }
 
 
-
-
-
 function handleDropdownChange(dropId, scalar_field){
     const div_num = parseInt(dropId.charAt(dropId.length - 1));
     colormap = cmaps[div_num]
@@ -277,73 +352,115 @@ function handleDropdownChange(dropId, scalar_field){
     });
 });
 
+//This is for grad_forward and grad_backward
 
+checkbox1 = document.getElementById('grad_check');
 
+// Add an event listener for the 'change' event
+checkbox1.addEventListener('change', function() {
+    if (checkbox1.checked) {
+        console.log('Checkbox is checked!');
+        gradient_mode = 1
+    } else {
+        console.log('Checkbox is unchecked!');
+        gradient_mode = 0
+    }
+})
+
+checkbox2 = document.getElementById('contour_check');
+
+// Add an event listener for the 'change' event
+checkbox2.addEventListener('change', function() {
+    if (checkbox2.checked) {
+        console.log('Checkbox is checked!');
+        contour_mode = 1
+    } else {
+        console.log('Checkbox is unchecked!');
+        contour_mode = 0
+    }
+})
+
+document.getElementById("grad_forward").addEventListener('click', () => {
+    console.log(gradient_mode)
+    if(gradient_mode === 1)
+    {
+        let id = selected_point.replace('point_', '')
+        id = parseInt(id)
+        console.log(id)
+        try {
+            fetch("http://127.0.0.1:5000/grad", {
+                method: 'POST',
+                headers:{
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    index: id
+                })
+            })
+            .then((response => response.json()))
+            .then((result)=>{
+                let grad_point = result.grad_point
+                d3.selectAll(".point_"+String(grad_point))
+                .raise()
+                .attr("stroke","black")
+                .attr("stroke-width",4)
+                .attr("fill","black")
+                .attr("r",3)
+                selected_point = "point_"+String(grad_point)
+                console.log(selected_point)
+            })
 
 document.getElementById('ClearSvg').addEventListener('click', () => {
     d3.selectAll("svg")
         .remove();
 })
 
+        } catch (error){
+            console.error("Error fetching dataoopsie:", error);
+        }
+    }
+});
+
+document.getElementById("contour_control").addEventListener('change', (e) => {
+    console.log(contour_mode)
+    if(contour_mode === 1)
+    {
+        let value = e.target.value;
+        console.log(value)
+        let col = scalars.indexOf(contour_field)
+        //col = col - 12
+        try {
+            fetch("http://127.0.0.1:5000/contour", {
+                method: 'POST',
+                headers:{
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    value: value,
+                    column: col
+                })
+            })
+            .then((response => response.json()))
+            .then((result)=>{
+                contour = result.contour
+                console.log(contour)
+                let temp_color = getRandomColor()
+                for(let i = 0; i<contour.length;i++)
+                {
+                    let selection = d3.selectAll(".point_"+String(contour[i]))
+                    console.log("ULT: ",selection.size())
+                    d3.selectAll(".point_"+String(contour[i]))
+                    .raise()
+                    .attr("stroke","black")
+                    .attr("fill",temp_color)
+                    .attr("stroke-width",1)
+                    .attr("r",3)
+                }
+            })
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// document.getElementsByClassName('scalar_dropdown').addEventListener('change', (e) => {
-//     event_id =  e.target.id;
-//     const scalar_attribute = document.getElementById(event_id).value;
-//     console.log(selectedFile)
-//     console.log(scalar_attribute)
-//     console.log(event_id)
-//     // response = fetch("http://127.0.0.1:5000/load_tsv")
-
-//     // fetch('http://127.0.0.1:5000/load_tsv', {
-//     //     method: 'POST',
-//     //     headers: { 'Content-Type': 'application/json' },
-//     //     body: JSON.stringify({ filename: selectedFile })
-//     // })
-//     // .then(response => response.json())
-//     // .then(data => {
-//     //     console.log(data);
-//     //     document.getElementById('preview').textContent = JSON.stringify(data, null, 2);
-//     // })
-//     // .catch(error => console.error("Error fetching dataoopsie:", error));
-// });
-
-// document.getElementById("main-grid").addEventListener
-
-// document.addEventListener("DOMContentLoaded", () => {
-//     document.querySelector(".grid-container").addEventListener("click", (event) => {
-//         if (event.target.classList.contains("dropdown-class")) {
-//             console.log("Clicked element ID:", event.target.id);
-//         }
-//     });
-// });
+        } catch (error){
+            console.error("Error fetching dataoopsie:", error);
+        }
+    }
+});
