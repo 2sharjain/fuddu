@@ -74,22 +74,58 @@ def _getpointsforrendering(filename, scalars):
 
 def getpointsforrendering(filename, scalars):
     print(filename)
-    scalar_feilds = []
-    df = pd.read_csv(filename, sep='\t')
+    if filename == "./Original.tsv":
+        scalar_feilds = []
+        df = pd.read_csv(filename, sep='\t')
 
 
-    with open("vertices.pkl", "rb") as file:
-        vertices = pickle.load(file)
+        with open("vertices.pkl", "rb") as file:
+            vertices = pickle.load(file)
 
-    with open("points.pkl", 'rb') as file:
-        points =  pickle.load(file)
+        with open("points.pkl", 'rb') as file:
+            points =  pickle.load(file)
 
-    for scalar in scalars:
-        col = df[scalar].tolist()
+        for scalar in scalars:
+            col = df[scalar].tolist()
 
-        scalar_feilds.append(col)
+            scalar_feilds.append(col)
+    else:
+        vertices = []
+        points = []
+        scalar_feilds = []
+        df = pd.read_csv(filename, sep='\t')
+        inputs = df.iloc[:, :6]
+        input_np = np.array(inputs)
+        print(input_np.shape)
+        # print(input_np.shape)
+        # radius = 5
+        # for i in range(6):
+        #     theta = (i*np.pi)/3
+        #     vertices.append([radius*np.cos(theta),radius*np.sin(theta),SCALARS[i]])
+        
+        with open("vertices.pkl", "rb") as file:
+            vertices = pickle.load(file)
+
+        
+        for i in range(input_np.shape[0]):
+            x_coord = 0
+            y_coord = 0
+            for j in range(6):
+                x_coord = x_coord + input_np[i][j]*vertices[j][0]
+                y_coord = y_coord + input_np[i][j]*vertices[j][1]
+            
+            points.append([x_coord,y_coord, i])
+        # points = np.array(points)
+        # with open("points.pkl", "wb") as file:
+        #     pickle.dump(points, file)
+        for scalar in scalars:
+            col = df[scalar].tolist()
+
+            scalar_feilds.append(col)
+
 
     return vertices, points, scalar_feilds
+
 
 
 @app.route('/change_hexagon', methods=['POST'])

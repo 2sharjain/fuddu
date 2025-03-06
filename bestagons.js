@@ -34,7 +34,15 @@ const scalars = ['KS1295[%]', '6082[%]', '2024[%]', 'bat-box[%]', '3003[%]', '40
 
 const default_scalars = ['Therm.conductivity(W/(mK))', 'Therm. diffusivity(m2/s)', 'Therm.resistivity(mK/W)', 'Linear thermal expansion (1/K)(20.0-300.0 C)', 'Technical thermal expansion (1/K)(20.0-300.0 C)']
 
-const cmaps = [["pink", "red"], ["cyan", "blue"], ["yellow", "green"], ["#fd8d3c", "#bd0026"], ["purple", "green"], ["blue", "green"]]
+// const cmaps_ = [["pink", "red"], ["cyan", "blue"], ["yellow", "green"], ["#fd8d3c", "#bd0026"], ["purple", "green"], ["blue", "green"]]
+
+const cmaps = [
+    ["#440154", "#3B528B", "#21908D", "#5DC963", "#FDE725"], // Viridis
+    ["#3B4CC0", "#778BEB", "#D1D1D1", "#E66B60", "#B40426"], // Coolwarm
+    ["#000004", "#420A68", "#932667", "#DD513A", "#FBA40A"],  // Inferno
+    ["#3B4CC0", "#778BEB", "#D1D1D1", "#E66B60", "#B40426"], // Coolwarm
+
+];
 
 const num_hex=4
 
@@ -154,15 +162,20 @@ function renderhexagons(div_num, scalar_field){
     
     // Define the scales for x and y using d3.scaleLinear
     const xScale = d3.scaleLinear()
-        .domain([d3.min(points, d => d[0]), d3.max(points, d => d[0])])  // Data range
+        .domain([d3.min(vertices, d => d[0]), d3.max(vertices, d => d[0])])  // Data range
         .range([width*0.1, width*0.90]);  // Output range based on the div width
     
     const yScale = d3.scaleLinear()
-        .domain([d3.min(points, d => d[1]), d3.max(points, d => d[1])])  // Data range
+        .domain([d3.min(vertices, d => d[1]), d3.max(vertices, d => d[1])])  // Data range
         .range([height*0.1, height*0.9]);  // Output range based on the div height
 
+    const min = d3.min(scalar_field)
+    const max = d3.max(scalar_field)
+    const range = max-min
+
+
     const cmap = d3.scaleLinear()
-        .domain([d3.min(scalar_field), d3.max(scalar_field)])  // Data range
+        .domain([min, min+(range/4), min+(2*range/4), min+(3*range/4), max])  // Data range
         .range(colormap);  // Output range based on the div height
     
     // Select the div and append an SVG
@@ -216,10 +229,15 @@ function renderhexagons(div_num, scalar_field){
 function handleDropdownChange(dropId, scalar_field){
     const div_num = parseInt(dropId.charAt(dropId.length - 1));
     colormap = cmaps[div_num]
+    const min = d3.min(scalar_field)
+    const max = d3.max(scalar_field)
+    const range = max-min
 
-    let new_cmap = d3.scaleLinear()
-        .domain([d3.min(scalar_field), d3.max(scalar_field)])
-        .range(colormap)
+
+    const cmap = d3.scaleLinear()
+        .domain([min, min+(range/4), min+(2*range/4), min+(3*range/4), max])  // Data range
+        .range(colormap);  
+
 
     d3.select("#hexsvg" + String(div_num))
         .selectAll("circle")
