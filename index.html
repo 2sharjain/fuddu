@@ -23,6 +23,16 @@
             margin: 0;
             box-sizing: border-box;
         }
+        span {
+          font-size: 22px;
+        }
+        div{
+          font-size: 22px;
+
+        }
+        .colormapsvg{
+          float:right;
+        }
         .grid-container {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -34,13 +44,13 @@
             align-items: center;
             justify-content: center;
             border: 1px solid transparent;
-            width:520px;
-            height: 480px;
+            width: 40vw;
+            height: 48vh;
             position: relative;
         }
         
         .sidebar {
-            width: 15%;
+            width: 18vw;
             background-color: #ccc;
             padding: 10px;
             display: flex;
@@ -61,6 +71,13 @@
           left: 0;
           width: 100%
         }
+        #contour_control{
+          width: 70%; 
+        }
+        .scalar_dropdown{
+          width: 35vw
+        }
+       
     </style>
 </head>
 <body>
@@ -78,10 +95,12 @@
           <select id="fileSelector">
             <option value="./Original.tsv">Original data</option>
             <option value="./aug_100k.tsv">Interpolated data</option>
+            <option value="./aug_20k.tsv">Interpolated data 20k</option>
             <option value="./original_120k.tsv">original subsampled data</option>
+            <option value="./aug_data_new.tsv"> NEWWWWW data</option>
           </select>
           <button id="loadButton">Load Data</button>
-          <button id="ClearSvg">Clear</button>
+          <button id="ClearSvg">Clear All</button>
         
         <pre id="output"></pre>
         </div>
@@ -96,18 +115,32 @@
             <!-- <input type="checkbox"> <div></div> -->
             <!-- <input type="checkbox"> <div></div> -->
         </div>
+        <br/>
+        <br/>
+        <br/>
 
         <div class="contour">
+          <label> Contour Mode</label>
             <input type="checkbox" id = "contour_check">
-            <input type="range" step="1" id = "contour_control">
+            <br/>
+            <span id="currentcontourval">Current contour Value</span>
+            <br/>
+            <span id="minVal">min</span>
+            <input type="range" step="1" id = "contour_control" >
+            <span id="maxVal">max</span>
+
+            <br/>
+
             <select id="contour_field">
               </select>
        </div>
+       <button id="ClearSel">Clear Selection</button>
 
-        <div class="show_data" >
-            <svg width="200" height="250" id = "show_data" word-wrap="break-word">
 
-            </svg>
+        <div id="dabba" >
+            <span id = "show_data" word-wrap="break-word">
+
+            </span>
         </div>
     </div>
     <script src="./bestagons.js">

@@ -49,6 +49,14 @@ function getRandomColor() {
     return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 }
 
+
+document.getElementById('ClearSvg').addEventListener('click', () => {
+    // console.log("\n shfshfkshfks \n")
+    d3.selectAll("svg")
+        .remove();
+})
+
+
 for (i=0; i<num_hex; i++){
     let gridid = "#hexagon"+i.toString()
     let dropdownid = "scalar_dropdown"+i.toString()
@@ -80,7 +88,7 @@ d3.select("#contour_field")
 //This list determines the selected contour scalar field
 document.getElementById("contour_field").addEventListener("change", function(event) {
     contour_field = event.target.value
-    console.log(contour_field)
+    // console.log(contour_field)
     let field_index = scalars.indexOf(contour_field)
     try{
         fetch("http://127.0.0.1:5000/field_range", {
@@ -89,23 +97,30 @@ document.getElementById("contour_field").addEventListener("change", function(eve
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                scalar_field: field_index,
+                scalar_field: contour_field,
             })
         })
         .then(response => response.json())
         .then(result => {
             max_val = result.max
             min_val = result.min
-            console.log(max_val)
-            console.log(min_val)
+            // console.log(max_val)
+            // console.log(min_val)
             document.getElementById("contour_control").max = max_val
             document.getElementById("contour_control").min = min_val 
+
+            d3.select("#minVal")
+                .text(min_val.toFixed(1))
+
+            d3.select("#maxVal")
+                .text(max_val.toFixed(1))
+            
 
         })
     } catch (error){
         console.error("dataoopsie:", error);
     }
-    console.log(contour_field)
+    // console.log(contour_field)
 });
 
 
@@ -124,9 +139,9 @@ let contour_field = ""
 document.getElementById('loadButton').addEventListener('click', () => {
     selectedFile = document.getElementById('fileSelector').value
     let hexagonDropdowns = getScalarsFromDropdown();
-    console.log(hexagonDropdowns)
+    // console.log(hexagonDropdowns)
 
-    console.log(selectedFile)
+    // console.log(selectedFile)
     let num_scalars = hexagonDropdowns.length;
     try {
         fetch("http://127.0.0.1:5000/load_tsv", {
@@ -145,14 +160,14 @@ document.getElementById('loadButton').addEventListener('click', () => {
             vertices = result.vertices;
             points = result.points;
             scalar_fields = result.scalar_fields;
-            console.log(vertices)
-            console.log(points)
-            console.log(scalar_fields)
+            // console.log(vertices)
+            // console.log(points)
+            // console.log(scalar_fields)
 
             renderhexagons(0, scalar_fields[0]);
-            //renderhexagons(1, scalar_fields[1]);
-            //renderhexagons(2, scalar_fields[2]);
-            //renderhexagons(3, scalar_fields[3]);
+            renderhexagons(1, scalar_fields[1]);
+            // renderhexagons(2, scalar_fields[2]);
+            // renderhexagons(3, scalar_fields[3]);
         })
 
 
@@ -190,6 +205,7 @@ function show_data(id)
         .attr("x",0)
         .attr("y",(i+1)*50)
         .text(scalars[i] + ":" + String(scalar_fields[i][id]))
+        .append('br')
     }
 }
 
@@ -203,7 +219,7 @@ function linkedhexagons(){
                    d3.selectAll("."+this.className.baseVal)
                         .attr("stroke","black")
                         .attr("stroke-width",4)
-                        .attr("r",3)
+                        .attr("r",8)
                     show_data(this.className.baseVal)
                 })
                 .on("mouseout", function(event){
@@ -231,12 +247,13 @@ function linkedhexagons(){
 
 function renderhexagons(div_num, scalar_field){
     const divId = "hexagon"+String(div_num)
-    console.log(divId)
+    // console.log(divId)
     const colormap = cmaps[div_num]
     const hexagon1Div = document.getElementById(divId);
-    console.log(hexagon1Div)
-    const width = hexagon1Div.offsetWidth
-    const height = hexagon1Div.offsetHeight
+    // console.log(hexagon1Div)
+    const height = Math.min(hexagon1Div.offsetWidth, hexagon1Div.offsetHeight)
+    const width = height * 1.1
+
     
     // Define the scales for x and y using d3.scaleLinear
     const xScale = d3.scaleLinear()
@@ -296,14 +313,61 @@ function renderhexagons(div_num, scalar_field){
         .attr("font-size", "14px")
         .attr("fill", "#999999")
         .text(d=>d[2]);
+    const colorBarHeight = height
+    const colorBarWidth = height*0.05
+    const cmap_svg = d3.select("#"+divId)
+        .append("svg")
+        .attr("width", 4*colorBarWidth)
+        .attr("height", colorBarHeight)
+        .attr("class", "colormapsvg")
+        .attr("id", "colormapsvg"+String(div_num));
+
+    cmap_svg.append('g')
+        .selectAll("rect")
+        .data(d3.range(d3.min(scalar_field), d3.max(scalar_field), (d3.max(scalar_field) - d3.min(scalar_field)) / 100))
+        .enter()
+        .append("rect")
+        .attr("x", 0)
+        .attr("y", (d, i) => colorBarHeight - (i * (colorBarHeight / 100)) ) // Space out the rectangles vertically
+        .attr("width", colorBarWidth)
+        .attr("height", colorBarHeight / 100)  // Each rectangle's height is proportional
+        .attr("fill", d => cmap(d));
+
+    cmap_svg.append("text")
+        .attr("x", 2*colorBarWidth)  // Position the text slightly to the right of the color bar
+        .attr("y", colorBarHeight-10)  // Position it at the bottom
+        .attr("text-anchor", "middle")
+        .text(d3.min(scalar_field).toFixed(1))  // Display the minimum value of the scalar field
+        .style("font-size", "20px");
+    cmap_svg.append("text")
+        .attr("x", 2*colorBarWidth)  // Position the text slightly to the right of the color bar
+        .attr("y", 30)  // Positin it at the top of the color bar
+        .attr("text-anchor", "middle")
+        .text(d3.max(scalar_field).toFixed(1))  // Display the maximum value of the scalar field
+        .style("font-size", "20px");
+
     linkedhexagons()
 }
 
 
+
+document.getElementById('ClearSel').addEventListener('click', () => {
+    handleDropdownChange("scalar_dropdown0", scalar_fields[0])
+    handleDropdownChange("scalar_dropdown1", scalar_fields[1])
+    handleDropdownChange("scalar_dropdown2", scalar_fields[2])
+    handleDropdownChange("scalar_dropdown3", scalar_fields[3])
+})
+
+
+
+
+
 function handleDropdownChange(dropId, scalar_field){
     const div_num = parseInt(dropId.charAt(dropId.length - 1));
+    scalar_fields[div_num] = scalar_field
+
     colormap = cmaps[div_num]
-    console.log(colormap)
+    // console.log(colormap)
     const min = d3.min(scalar_field)
     const max = d3.max(scalar_field)
     const range = max-min
@@ -320,7 +384,9 @@ function handleDropdownChange(dropId, scalar_field){
         .selectAll("circle")
         .each(function(d) {  
             d3.select(this)
-                .attr("fill", d=> new_cmap(scalar_field[d[2]]));  
+                .attr("fill", d=> new_cmap(scalar_field[d[2]]))
+                .attr("r", 1)
+                .attr("stroke-width", 0);  
         });
 }
 
@@ -372,21 +438,21 @@ checkbox2 = document.getElementById('contour_check');
 // Add an event listener for the 'change' event
 checkbox2.addEventListener('change', function() {
     if (checkbox2.checked) {
-        console.log('Checkbox is checked!');
+        // console.log('Checkbox is checked!');
         contour_mode = 1
     } else {
-        console.log('Checkbox is unchecked!');
+        // console.log('Checkbox is unchecked!');
         contour_mode = 0
     }
 })
 
 document.getElementById("grad_forward").addEventListener('click', () => {
-    console.log(gradient_mode)
+    // console.log(gradient_mode)
     if(gradient_mode === 1)
     {
         let id = selected_point.replace('point_', '')
         id = parseInt(id)
-        console.log(id)
+        // console.log(id)
         try {
             fetch("http://127.0.0.1:5000/grad", {
                 method: 'POST',
@@ -407,13 +473,10 @@ document.getElementById("grad_forward").addEventListener('click', () => {
                 .attr("fill","black")
                 .attr("r",3)
                 selected_point = "point_"+String(grad_point)
-                console.log(selected_point)
+                // console.log(selected_point)
             })
 
-document.getElementById('ClearSvg').addEventListener('click', () => {
-    d3.selectAll("svg")
-        .remove();
-})
+
 
         } catch (error){
             console.error("Error fetching dataoopsie:", error);
@@ -422,13 +485,15 @@ document.getElementById('ClearSvg').addEventListener('click', () => {
 });
 
 document.getElementById("contour_control").addEventListener('change', (e) => {
-    console.log(contour_mode)
+    // console.log(contour_mode)
     if(contour_mode === 1)
     {
         let value = e.target.value;
-        console.log(value)
+        // console.log(value)
+        d3.select("#currentcontourval")
+            .text("Current value: " +value)
         let col = scalars.indexOf(contour_field)
-        //col = col - 12
+ 
         try {
             fetch("http://127.0.0.1:5000/contour", {
                 method: 'POST',
@@ -437,18 +502,18 @@ document.getElementById("contour_control").addEventListener('change', (e) => {
                 },
                 body: JSON.stringify({
                     value: value,
-                    column: col
+                    column: contour_field
                 })
             })
             .then((response => response.json()))
             .then((result)=>{
                 contour = result.contour
-                console.log(contour)
+                // console.log(contour)
                 let temp_color = getRandomColor()
                 for(let i = 0; i<contour.length;i++)
                 {
                     let selection = d3.selectAll(".point_"+String(contour[i]))
-                    console.log("ULT: ",selection.size())
+                    // console.log("ULT: ",selection.size())
                     d3.selectAll(".point_"+String(contour[i]))
                     .raise()
                     .attr("stroke","black")
