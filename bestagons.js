@@ -132,6 +132,7 @@ let selectedFile = ""
 let gradient_mode = 0
 let contour_mode = 0
 let selected_point = ""
+let selected_fig = ""
 let contour_field = ""
 
 // THE LOAD DATA BUTTON
@@ -235,11 +236,17 @@ function linkedhexagons(){
                  .on("click", function(event){
                     // highlightpoints("."+this.className.baseVal)
                     d3.selectAll("."+this.className.baseVal)
-                         .attr("stroke","black")
-                         .attr("stroke-width",4)
-                         .attr("r",3)
+                        .attr("stroke","black")
+                        .attr("stroke-width",4)
+                        .attr("r",8)
                      show_data(this.className.baseVal)
                      selected_point = this.className.baseVal
+                     selected_fig = this.id
+                     selected_fig = selected_fig.replace("point_","")
+                     selected_fig = selected_fig[0]
+                     selected_fig = document.getElementById("scalar_dropdown"+selected_fig).value
+                     console.log("CHECK: ",selected_fig)
+
                  })
                     
         })
@@ -294,7 +301,7 @@ function renderhexagons(div_num, scalar_field){
         .attr("r", 1)  // Set a radius for visibility
         .attr("fill", d=> cmap(scalar_field[d[2]])) // Set color
         .attr("id", d => ("point_"+String(div_num)+"_" + String(d[2])))
-        // .attr("class", "hexpoints"+String(div_num))
+        //.attr("class", "hexpoints"+String(div_num))
         .attr("class", d => "point_"+String(d[2]));
 
     svg.append("path")
@@ -356,6 +363,19 @@ document.getElementById('ClearSel').addEventListener('click', () => {
     handleDropdownChange("scalar_dropdown1", scalar_fields[1])
     handleDropdownChange("scalar_dropdown2", scalar_fields[2])
     handleDropdownChange("scalar_dropdown3", scalar_fields[3])
+    try {
+        fetch("http://127.0.0.1:5000/empty_path", {
+            method: 'POST',
+            headers:{
+                'Content-Type': 'application/json'
+            },
+        })
+        .then((response => response.json()))
+
+    } catch (error){
+        console.error("Error fetching dataoopsie:", error);
+    }
+
 })
 
 
@@ -447,20 +467,21 @@ checkbox2.addEventListener('change', function() {
 })
 
 document.getElementById("grad_forward").addEventListener('click', () => {
-    // console.log(gradient_mode)
+    console.log(gradient_mode)
     if(gradient_mode === 1)
     {
         let id = selected_point.replace('point_', '')
         id = parseInt(id)
         // console.log(id)
         try {
-            fetch("http://127.0.0.1:5000/grad", {
+            fetch("http://127.0.0.1:5000/grad_forward", {
                 method: 'POST',
                 headers:{
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    index: id
+                    index: id,
+                    column: selected_fig
                 })
             })
             .then((response => response.json()))
@@ -470,10 +491,47 @@ document.getElementById("grad_forward").addEventListener('click', () => {
                 .raise()
                 .attr("stroke","black")
                 .attr("stroke-width",4)
-                .attr("fill","black")
-                .attr("r",3)
+                .attr("r",8)
                 selected_point = "point_"+String(grad_point)
-                // console.log(selected_point)
+                console.log(selected_point)
+            })
+
+
+
+        } catch (error){
+            console.error("Error fetching dataoopsie:", error);
+        }
+    }
+});
+
+document.getElementById("grad_backward").addEventListener('click', () => {
+    console.log(gradient_mode)
+    if(gradient_mode === 1)
+    {
+        let id = selected_point.replace('point_', '')
+        id = parseInt(id)
+        // console.log(id)
+        try {
+            fetch("http://127.0.0.1:5000/grad_backward", {
+                method: 'POST',
+                headers:{
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    index: id,
+                    column: selected_fig
+                })
+            })
+            .then((response => response.json()))
+            .then((result)=>{
+                let grad_point = result.grad_point
+                d3.selectAll(".point_"+String(grad_point))
+                .raise()
+                .attr("stroke","black")
+                .attr("stroke-width",4)
+                .attr("r",8)
+                selected_point = "point_"+String(grad_point)
+                console.log(selected_point)
             })
 
 

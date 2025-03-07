@@ -15,16 +15,20 @@ SCALARS = ['KS1295[%]', '6082[%]', '2024[%]', 'bat-box[%]', '3003[%]', '4032[%]'
 filename_=''
 
 df = ''
-
+knn = ''
 @app.route('/load_tsv', methods=['POST'])
 def load_tsv():
     data = request.get_json()
+    global knn
     # print(data)
     filename = data.get("filename")
     scalars = data.get("scalars")
     numHexagons = data.get("numHexagons")
     global filename_ 
     filename_ = data.get("filename")
+    knn_name = filename_.replace(".tsv","")
+    knn_name = knn_name.replace("./","")
+    knn = np.load('./knn_'+knn_name+".npy")
 
     vertices, points, scalar_fields = getpointsforrendering(filename, scalars)
     return jsonify({'vertices': vertices, 'points': points, 'scalar_fields': scalar_fields})
@@ -142,8 +146,11 @@ def change_hexagon():
     
     return jsonify({'scalar_field': scalar_field})
 
-def get_next_point(index,col,filename):
-    knn = np.load('../knn.npy')
+path_dict = {}
+
+def get_next_point(index,col):
+    global knn
+    global path_dict
     k_nearest = knn[index]
     # df = pd.read_csv(filename,sep='\t')
     # Now need to find the index with the largest column value in k_nearest
@@ -151,21 +158,56 @@ def get_next_point(index,col,filename):
     max_index = -1
     for i in range(1,len(k_nearest)):
         temp = df.iloc[k_nearest[i],col]
-        if(temp>max):
+        if(temp>max and (k_nearest[i] not in path_dict)):
             max = temp
             max_index = k_nearest[i]
+            path_dict[k_nearest[i]] = "dummy"
     
     return max_index
     
-
-@app.route('/grad', methods=['POST'])
-def grad():
+@app.route('/grad_forward', methods=['POST'])
+def grad_forward():
+    global path_dict
     data = request.get_json()
     id = data.get("index")
+    col_name = data.get("column")
     id = int(id)
-    for i in range(1):
-        id = get_next_point(id,50,filename_)
-    print(id)
+    col = df.columns.get_loc(col_name)
+    for i in range(20):
+        id = get_next_point(id,col)
+    print("CHECK: ",id)
+    print("PATH: ",path_dict)
+    return jsonify({'grad_point': int(id)})
+
+def get_prev_point(index,col):
+    global knn
+    global path_dict
+    k_nearest = knn[index]
+    # df = pd.read_csv(filename,sep='\t')
+    # Now need to find the index with the largest column value in k_nearest
+    min = 10000000000
+    min_index = -1
+    for i in range(1,len(k_nearest)):
+        temp = df.iloc[k_nearest[i],col]
+        if(temp<min and (k_nearest[i] not in path_dict)):
+            min = temp
+            min_index = k_nearest[i]
+            path_dict[k_nearest[i]] = "dummy"
+    
+    return min_index
+    
+@app.route('/grad_backward', methods=['POST'])
+def grad_backward():
+    global path_dict
+    data = request.get_json()
+    id = data.get("index")
+    col_name = data.get("column")
+    id = int(id)
+    col = df.columns.get_loc(col_name)
+    for i in range(20):
+        id = get_prev_point(id,col)
+    print("CHECK: ",id)
+    print("PATH: ",path_dict)
     return jsonify({'grad_point': int(id)})
 
 @app.route('/contour', methods=['POST'])
@@ -217,6 +259,12 @@ def field_range():
     print(max)
     return jsonify({'max': max_val, 'min': min_val})
 
+@app.route('/empty_path', methods=['POST'])
+def empty_path():
+    global path_dict
+    path_dict = {}
+    print(path_dict)
+    return jsonify({})
 
 if __name__ == '__main__':
     app.run(debug=True)
