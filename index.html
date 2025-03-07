@@ -77,6 +77,12 @@
         .scalar_dropdown{
           width: 35vw
         }
+        #contour_field{
+          width: 17vw;
+        }
+        #show_datapoints{
+          float: top;
+        }
        
     </style>
 </head>
@@ -91,6 +97,10 @@
     <div id="preview"></div>
 
     <div class="sidebar">
+      <div id="dabba2" >
+        <span id = "show_datapoints" class="dabba" word-wrap="break-word">
+        </span>
+      </div>
         <div class="dropdown">
           <select id="fileSelector">
             <option value="./Original.tsv">Original data</option>
@@ -137,9 +147,8 @@
        <button id="ClearSel">Clear Selection</button>
 
 
-        <div id="dabba" >
-            <span id = "show_data" word-wrap="break-word">
-
+        <div id="dabba1" >
+            <span id = "show_data" class="dabba" word-wrap="break-word">
             </span>
         </div>
     </div>
