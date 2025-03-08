@@ -30,13 +30,15 @@ def load_tsv():
     knn_name = knn_name.replace("./","")
     knn = np.load('./knn_'+knn_name+".npy")
 
-    vertices, points, scalar_fields = getpointsforrendering(filename, scalars)
-    return jsonify({'vertices': vertices, 'points': points, 'scalar_fields': scalar_fields})
+    vertices, points, scalar_fields, inputs = getpointsforrendering(filename, scalars)
+    return jsonify({'vertices': vertices, 'points': points, 'scalar_fields': scalar_fields, 'inputs': inputs})
     # return jsonify(vertices=vertices)
 
 
 def _getpointsforrendering(filename, scalars):
     print(filename)
+    df = pd.read_csv(filename, sep='\t')
+
     vertices = []
     points = []
     scalar_feilds = []
@@ -50,9 +52,9 @@ def _getpointsforrendering(filename, scalars):
         theta = (i*np.pi)/3
         vertices.append([radius*np.cos(theta),radius*np.sin(theta),SCALARS[i]])
 
-    # with open("vertices.pkl", "wb") as file:
-    #     pickle.dump(vertices, file)
-    # vertices = np.array(vertices)
+    with open("vertices.pkl", "wb") as file:
+        pickle.dump(vertices, file)
+    vertices = np.array(vertices)
     for i in range(249999):
         x_coord = 0
         y_coord = 0
@@ -76,7 +78,8 @@ def getpointsforrendering(filename, scalars):
     print(filename)
     global df
     df = pd.read_csv(filename, sep='\t')
-
+    inputs = df.iloc[:, :6]
+    input_np = np.array(inputs)
     if filename == "./Original.tsv":
         scalar_feilds = []
 
@@ -96,8 +99,7 @@ def getpointsforrendering(filename, scalars):
         vertices = []
         points = []
         scalar_feilds = []
-        inputs = df.iloc[:, :6]
-        input_np = np.array(inputs)
+
         print(input_np.shape)
         # print(input_np.shape)
         # radius = 5
@@ -126,7 +128,7 @@ def getpointsforrendering(filename, scalars):
             scalar_feilds.append(col)
 
 
-    return vertices, points, scalar_feilds
+    return vertices, points, scalar_feilds, input_np.tolist()
 
 
 

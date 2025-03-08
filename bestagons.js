@@ -32,7 +32,7 @@
 const vertex_labels = ['KS1295[%]', '6082[%]', '2024[%]', 'bat-box[%]', '3003[%]', '4032[%]']
 const scalars = ['KS1295[%]', '6082[%]', '2024[%]', 'bat-box[%]', '3003[%]', '4032[%]', 'Al', 'Si', 'Cu', 'Ni', 'Mg', 'Mn', 'Fe', 'Cr', 'Ti', 'Zr', 'V', 'Zn', 'Vf_FCC_A1', 'Vf_DIAMOND_A4', 'Vf_AL15SI2M4', 'Vf_AL3X', 'Vf_AL6MN', 'Vf_MG2ZN3', 'Vf_AL3NI2', 'Vf_AL3NI_D011', 'Vf_AL7CU4NI', 'Vf_AL2CU_C16', 'Vf_Q_ALCUMGSI', 'Vf_AL7CU2FE', 'Vf_MG2SI_C1', 'Vf_AL9FE2SI2', 'Vf_AL18FE2MG7SI10', 'eut. frac.[%]', 'eut. T ( C)', 'T_FCC_A1', 'T_DIAMOND_A4', 'T_AL15SI2M4', 'T_AL3X', 'T_AL6MN', 'T_MG2ZN3', 'T_AL3NI2', 'T_AL3NI_D011', 'T_AL7CU4NI', 'T_AL2CU_C16', 'T_Q_ALCUMGSI', 'T_AL7CU2FE', 'T_MG2SI_C1', 'T_AL9FE2SI2', 'T_AL18FE2MG7SI10', 'T(liqu)', 'T(sol)', 'delta_T', 'delta_T_FCC', 'delta_T_Al15Si2M4', 'delta_T_Si', 'CSC', 'YS(MPa)', 'hardness(Vickers)', 'CTEvol(1/K)(20.0-300.0 C)', 'Density(g/cm3)', 'Volume(m3/mol)', 'El.conductivity(S/m)', 'El. resistivity(ohm m)', 'heat capacity(J/(mol K))', 'Therm.conductivity(W/(mK))', 'Therm. diffusivity(m2/s)', 'Therm.resistivity(mK/W)', 'Linear thermal expansion (1/K)(20.0-300.0 C)', 'Technical thermal expansion (1/K)(20.0-300.0 C)']
 
-const default_scalars = ['Therm.conductivity(W/(mK))', 'Therm. diffusivity(m2/s)', 'Therm.resistivity(mK/W)', 'Linear thermal expansion (1/K)(20.0-300.0 C)', 'Technical thermal expansion (1/K)(20.0-300.0 C)']
+const default_scalars = ['Therm.conductivity(W/(mK))', 'T(sol)' ,'T(liqu)', 'Vf_DIAMOND_A4']
 
 // const cmaps_ = [["pink", "red"], ["cyan", "blue"], ["yellow", "green"], ["#fd8d3c", "#bd0026"], ["purple", "green"], ["blue", "green"]]
 
@@ -128,6 +128,7 @@ document.getElementById("contour_field").addEventListener("change", function(eve
 let vertices = []
 let points = []
 let scalar_fields = [] 
+let affine_vertices= []
 let selectedFile = ""
 let gradient_mode = 0
 let contour_mode = 0
@@ -161,12 +162,14 @@ document.getElementById('loadButton').addEventListener('click', () => {
             vertices = result.vertices;
             points = result.points;
             scalar_fields = result.scalar_fields;
+            affine_vertices = result.inputs
+
             // console.log(vertices)
             // console.log(points)
             // console.log(scalar_fields)
 
             renderhexagons(0, scalar_fields[0]);
-            renderhexagons(1, scalar_fields[1]);
+            // renderhexagons(1, scalar_fields[1]);
             // renderhexagons(2, scalar_fields[2]);
             // renderhexagons(3, scalar_fields[3]);
         })
@@ -205,9 +208,19 @@ function show_data(id)
         .append("text")
         .attr("x",0)
         .attr("y",(i+1)*50)
-        .text(scalars[i] + ":" + String(scalar_fields[i][id]))
+        .html("<b>"+scalars[i] + ":</b> <br>" + String(scalar_fields[i][id]))
         .append('br')
+        .append('br')
+        .append("text")
     }
+    for(let i = 0; i<6; i++){
+        d3.select("#show_datapoints")
+            .append("text")
+            .attr("x",0)
+            .attr("y",0)
+            .html("<b>"+ vertex_labels[i]+":</b>"+affine_vertices[id][i]+"<br>")
+    }
+
 }
 
 function linkedhexagons(){
@@ -230,7 +243,7 @@ function linkedhexagons(){
                         d3.selectAll("."+this.className.baseVal)
                             .attr("stroke-width",0)
                             .attr("r",1)
-                        d3.select("#show_data").selectAll("*").remove();
+                        d3.selectAll(".dabba").selectAll("*").remove();
                     }
                  })
                  .on("click", function(event){
@@ -315,7 +328,7 @@ function renderhexagons(div_num, scalar_field){
         .data(vertices)
         .enter()
         .append("text")
-        .attr("x", d => xScale(d[0])+width*0.02)  // Use xScale to map data to div's width
+        .attr("x", d => xScale(d[0])+(d[0] <= 0 ? -width * 0.09: width*0.02))  // Use xScale to map data to div's width
         .attr("y", d => yScale(d[1])+height*0.02)  // Use yScale to map data to div's height
         .attr("font-size", "14px")
         .attr("fill", "#999999")
@@ -341,12 +354,14 @@ function renderhexagons(div_num, scalar_field){
         .attr("fill", d => cmap(d));
 
     cmap_svg.append("text")
+        .attr("id", "mincmap"+String(div_num))
         .attr("x", 2*colorBarWidth)  // Position the text slightly to the right of the color bar
         .attr("y", colorBarHeight-10)  // Position it at the bottom
         .attr("text-anchor", "middle")
         .text(d3.min(scalar_field).toFixed(1))  // Display the minimum value of the scalar field
         .style("font-size", "20px");
     cmap_svg.append("text")
+        .attr("id", "maxcmap"+String(div_num))
         .attr("x", 2*colorBarWidth)  // Position the text slightly to the right of the color bar
         .attr("y", 30)  // Positin it at the top of the color bar
         .attr("text-anchor", "middle")
@@ -392,6 +407,9 @@ function handleDropdownChange(dropId, scalar_field){
     const max = d3.max(scalar_field)
     const range = max-min
 
+    const hexagon1Div = document.getElementById("hexagon"+String(div_num));
+    const height = Math.min(hexagon1Div.offsetWidth, hexagon1Div.offsetHeight)
+    const width = height * 1.1
 
     const new_cmap = d3.scaleLinear()
         .domain([min, min+(range/4), min+(2*range/4), min+(3*range/4), max])  // Data range
@@ -406,7 +424,44 @@ function handleDropdownChange(dropId, scalar_field){
             d3.select(this)
                 .attr("fill", d=> new_cmap(scalar_field[d[2]]))
                 .attr("r", 1)
-                .attr("stroke-width", 0);  
+                .attr("stroke-width", 0); 
+    const colorBarHeight = height
+    const colorBarWidth = height*0.05
+    const cmap_svg = d3.select("#colomapsvg"+String(div_num))
+    // console.log(cmap_svg)
+    // cmap_svg.selectAll("*")
+    //     .remove()
+    
+    // cmap_svg.append('g')
+    //     .selectAll("rect")
+    //     .data(d3.range(d3.min(scalar_field), d3.max(scalar_field), (d3.max(scalar_field) - d3.min(scalar_field)) / 100))
+    //     .enter()
+    //     .append("rect")
+    //     .attr("x", 0)
+    //     .attr("y", (d, i) => colorBarHeight - (i * (colorBarHeight / 100)) ) // Space out the rectangles vertically
+    //     .attr("width", colorBarWidth)
+    //     .attr("height", colorBarHeight / 100)  // Each rectangle's height is proportional
+    //     .attr("fill", d => new_cmap(d));
+
+    // cmap_svg.append("text")
+    //     .attr("x", 2*colorBarWidth)  // Position the text slightly to the right of the color bar
+    //     .attr("y", colorBarHeight-10)  // Position it at the bottom
+    //     .attr("text-anchor", "middle")
+    //     .text(d3.min(scalar_field).toFixed(1))  // Display the minimum value of the scalar field
+    //     .style("font-size", "20px");
+    // cmap_svg.append("text")
+    //     .attr("x", 2*colorBarWidth)  // Position the text slightly to the right of the color bar
+    //     .attr("y", 30)  // Positin it at the top of the color bar
+    //     .attr("text-anchor", "middle")
+    //     .text(d3.max(scalar_field).toFixed(1))  // Display the maximum value of the scalar field
+    //     .style("font-size", "20px");
+
+    d3.select("#maxcmap"+String(div_num))
+        .text(d3.max(scalar_field).toFixed(1))  // Display the maximum value of the scalar field
+        .style("font-size", "20px");
+    d3.select("#mincmap"+String(div_num))
+        .text(d3.min(scalar_field).toFixed(1))  // Display the maximum value of the scalar field
+        .style("font-size", "20px");
         });
 }
 
